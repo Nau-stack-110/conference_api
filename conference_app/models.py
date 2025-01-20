@@ -35,12 +35,22 @@ def save_user_profile(sender, instance, **kwargs):
     
 post_save.connect(create_user_profile, sender=User)
 post_save.connect(save_user_profile, sender=User)
-
+    
 class Conference(models.Model):
+    _CATE= [
+        ('Education', 'EDUCATION'),
+        ('Technologies', 'TECHNOLOGIES'),
+        ('Science', 'SCIENCE'),
+        ('Culture', 'CULTURE'),
+        ('Arts', 'ARTS'),
+        ('Business', 'BUSINESS'),
+        ('Autres', 'AUTRES')
+    ]     
     title = models.CharField(max_length=200)
     description = models.TextField()
     date = models.DateField()
     price = models.CharField(default="Gratuit", max_length=255)
+    category = models.CharField(max_length=255, choices=_CATE)
     lieu = models.CharField(max_length=255)
     image = models.ImageField(upload_to='conferences/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

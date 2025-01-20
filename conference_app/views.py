@@ -31,6 +31,16 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = (AllowAny,)
     serializer_class = RegisterSerializer
 
+class RegisterView2(APIView):
+    queryset = User.objects.all()
+    permission_classes = (AllowAny,)    
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class ConferenceListView(generics.ListAPIView):
     queryset = Conference.objects.all()
     serializer_class = ConferenceSerializer
@@ -47,7 +57,6 @@ class ConferenceDetailView(generics.RetrieveAPIView):
         serializer = self.get_serializer(instance)
         data = serializer.data
         
-        # Calculer le nombre total de participants
         total_participants = Registration.objects.filter(
             session__conference=instance
         ).values('user').distinct().count()
@@ -65,6 +74,15 @@ class RegistrationListView(generics.ListAPIView):
             return Registration.objects.filter(session__conference_id=conference_id)
         return Registration.objects.all()
 
+class ConferenceCreateView2(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    def post(self, request):
+        serializer = ConferenceCreateSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 class ConferenceCreateView(generics.CreateAPIView):
     queryset = Conference.objects.all()
     serializer_class = ConferenceCreateSerializer
@@ -117,10 +135,15 @@ class SessionCreateView(generics.CreateAPIView):
     serializer_class = SessionSerializer
     permission_classes = [IsAuthenticated, IsAdminUser]
 
-    def perform_create(self, serializer):
-        conference_id = self.request.data.get('conference')
-        conference = Conference.objects.get(id=conference_id)
-        serializer.save(conference=conference)  
+    def post(self, request, *args, **kwargs):
+        if isinstance(request.data, list):
+            serializer = self.get_serializer(data=request.data, many=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error": "Les données doivent être une liste."}, status=status.HTTP_400_BAD_REQUEST)
 
 class ConferenceUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Conference.objects.all()
@@ -155,8 +178,6 @@ class SessionUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         session = self.get_object()
         if session.registrations.exists():
-            # Si la session a des inscriptions, on vérifie que la nouvelle date
-            # n'est pas trop différente de l'ancienne
             new_start_time = serializer.validated_data.get('start_time')
             if new_start_time and abs((new_start_time - session.start_time).days) > 0:
                 raise serializers.ValidationError(

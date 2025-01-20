@@ -108,12 +108,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 class ConferenceSerializer(serializers.ModelSerializer):
     sessions = SessionSerializer(many=True, read_only=True)
-    total_participants = serializers.SerializerMethodField()
-
+    total_participants = serializers.SerializerMethodField()    
     class Meta:
         model = Conference
-        fields = ['id', 'title', 'description', 'image', 'date', 'lieu', 'price', 'created_at', 'sessions', 'total_participants']
-
+        fields = ['id', 'title', 'description', 'image', 'date', 'lieu', 'price', 'category', 'created_at', 'sessions', 'total_participants']
+    
     def get_total_participants(self, obj):
         return Registration.objects.filter(
             session__conference=obj
@@ -122,7 +121,7 @@ class ConferenceSerializer(serializers.ModelSerializer):
 class ConferenceCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Conference
-        fields = ['title', 'description', 'image', 'date', 'price', 'lieu']
+        fields = ['title', 'description', 'image', 'date', 'price', 'lieu', 'category']
 
     def validate_date(self, value):
         if value < timezone.now().date():
