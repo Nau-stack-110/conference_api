@@ -77,3 +77,11 @@ class Registration(models.Model):
         return f"{self.user.username} registered for {self.session.title}"
 
 
+class Ticket(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tickets')
+    conference = models.ForeignKey(Conference, on_delete=models.CASCADE, related_name='tickets')
+    qr_code_url = models.URLField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Ticket for {self.conference.title} by {self.user.username}'

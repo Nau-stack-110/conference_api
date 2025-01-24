@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Profile, User, Session, Registration, Conference
+from .models import Profile, User, Session, Registration, Conference, Ticket
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.utils import timezone
@@ -150,7 +150,6 @@ class RegistrationCreateSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         conference_id = validated_data.pop('conference_id')
         
-        # Récupérer la première session disponible de la conférence
         session = Session.objects.filter(
             conference_id=conference_id,
             start_time__gt=timezone.now()
@@ -173,4 +172,9 @@ class StatisticSerializer(serializers.Serializer):
       conferences = serializers.IntegerField()  
       registrations = serializers.IntegerField()    
       users = serializers.IntegerField()
-    
+
+
+class TicketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ticket
+        fields = ['id', 'conference', 'qr_code_url', 'created_at']  

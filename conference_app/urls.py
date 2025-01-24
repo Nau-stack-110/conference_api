@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ConferenceCreateView2, RegisterView2, RegistrationListView, ProfileView, StatisticView, UserProfileView, MyTokenObtainPairView, RegisterView, ConferenceListView, ConferenceDetailView, ConferenceCreateView, RegistrationCreateView, SessionCreateView, ConferenceUpdateDeleteView, SessionUpdateDeleteView, VerifyRegistrationView
+from .views import ConferenceCreateView2, MyTicketsView, RegisterView2, RegistrationListView, ProfileView, StatisticView, UserProfileView, MyTokenObtainPairView, RegisterView, ConferenceListView, ConferenceDetailView, ConferenceCreateView, RegistrationCreateView, SessionCreateView, ConferenceUpdateDeleteView, SessionUpdateDeleteView, VerifyRegistrationView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 router = DefaultRouter()
@@ -13,7 +13,8 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('register/', RegisterView.as_view(), name='register'),
     path('register_betsaka/', RegisterView2.as_view(), name='register_betsaka'),
-   
+    path('my-tickets/', MyTicketsView.as_view(), name='my-tickets'),
+    
     path('conferences/', ConferenceListView.as_view(), name='conference_list'),
     path('conferences/<int:pk>/', ConferenceDetailView.as_view(), name='conference_detail'),
     path('registrations/', RegistrationListView.as_view(), name='registration_list'),
