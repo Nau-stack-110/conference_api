@@ -6,8 +6,8 @@ from rest_framework import viewsets, permissions
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializer import MytokenObtainPairSerializer, RegisterSerializer, StatisticSerializer, TicketSerializer, UserSerializerProfile, ProfileSerializer, ConferenceSerializer, RegistrationSerializer, ConferenceCreateSerializer, RegistrationCreateSerializer, SessionSerializer
-from .models import Profile, Session, Ticket, User, Conference, Registration
+from .serializer import MytokenObtainPairSerializer, RegisterSerializer, SessionSerializerList, StatisticSerializer, UserSerializerProfile, ProfileSerializer, ConferenceSerializer, RegistrationSerializer, ConferenceCreateSerializer, RegistrationCreateSerializer, SessionSerializer
+from .models import Profile, Session, User, Conference, Registration
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
@@ -66,7 +66,7 @@ class ConferenceDetailView(generics.RetrieveAPIView):
 
 class RegistrationListView(generics.ListAPIView):
     serializer_class = RegistrationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get_queryset(self):
         conference_id = self.request.query_params.get('conference_id')
@@ -131,6 +131,10 @@ class StatisticView(viewsets.ModelViewSet):
         serializer = self.get_serializer(stats)
         return JsonResponse(serializer.data)  
 
+class SessionCreateView2(generics.CreateAPIView):
+    serializer_class = SessionSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
 class SessionCreateView(generics.CreateAPIView):
     serializer_class = SessionSerializer
     permission_classes = [IsAuthenticated, IsAdminUser]
@@ -147,7 +151,7 @@ class SessionCreateView(generics.CreateAPIView):
 
 class ConferenceUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Conference.objects.all()
-    # permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, IsAdminUser]
     
     def get_serializer_class(self):
         if self.request.method in ['PUT', 'PATCH']:
@@ -201,11 +205,8 @@ class VerifyRegistrationView(generics.GenericAPIView):
         except Registration.DoesNotExist:
             return Response({'error': 'Inscription non trouvée'}, status=404)
 
-class MyTicketsView(APIView):
-    permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        user = request.user
-        tickets = Ticket.objects.filter(user=user)  
-        serializer = TicketSerializer(tickets, many=True)
-        return Response(serializer.data)  
+class SessionViewList(viewsets.ModelViewSet):
+    queryset = Session.objects.all()
+    serializer_class = SessionSerializerList
+  

@@ -18,7 +18,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     fullname = models.CharField(max_length=100)
     bio  = models.CharField(max_length=300)
-    image = models.ImageField(upload_to='users/', blank=True, null=True, default="default.jpg")
+    image = models.ImageField(upload_to='users/', blank=True, null=True)
     verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now_add=True)
@@ -76,12 +76,3 @@ class Registration(models.Model):
     def __str__(self):
         return f"{self.user.username} registered for {self.session.title}"
 
-
-class Ticket(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tickets')
-    conference = models.ForeignKey(Conference, on_delete=models.CASCADE, related_name='tickets')
-    qr_code_url = models.URLField(max_length=200)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f'Ticket for {self.conference.title} by {self.user.username}'

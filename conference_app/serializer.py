@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Profile, User, Session, Registration, Conference, Ticket
+from .models import Profile, User, Session, Registration, Conference
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.utils import timezone
@@ -74,7 +74,6 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class SessionSerializer(serializers.ModelSerializer):
     participants_count = serializers.SerializerMethodField()
-
     class Meta:
         model = Session
         fields = ['id', 'title', 'speaker', 'profession', 'start_time', 'conference', 'participants_count']
@@ -101,11 +100,6 @@ class SessionSerializer(serializers.ModelSerializer):
     def get_participants_count(self, obj):
         return obj.registrations.count()
 
-class RegistrationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Registration
-        fields = ['id', 'user', 'session', 'registered_at']
-
 class ConferenceSerializer(serializers.ModelSerializer):
     sessions = SessionSerializer(many=True, read_only=True)
     total_participants = serializers.SerializerMethodField()    
@@ -130,7 +124,6 @@ class ConferenceCreateSerializer(serializers.ModelSerializer):
 
 class RegistrationCreateSerializer(serializers.ModelSerializer):
     conference_id = serializers.IntegerField(write_only=True)
-
     class Meta:
         model = Registration
         fields = ['conference_id', 'session']
@@ -139,7 +132,6 @@ class RegistrationCreateSerializer(serializers.ModelSerializer):
     def validate_conference_id(self, value):
         try:
             conference = Conference.objects.get(id=value)
-            # Vérifier si la conférence a des sessions
             if not conference.sessions.exists():
                 raise serializers.ValidationError("Cette conférence n'a pas de sessions disponibles.")
             return value
@@ -168,13 +160,22 @@ class RegistrationCreateSerializer(serializers.ModelSerializer):
         return registration
 
 
+class SessionSerializerList(serializers.ModelSerializer):
+    conference = ConferenceSerializer(read_only=True)
+    class Meta:
+        model = Session
+        fields = ['id', 'start_time', 'conference']
+
+
+class RegistrationSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    session = SessionSerializerList(read_only=True)
+    class Meta:
+        model = Registration
+        fields = ['id', 'user', 'session', 'registered_at']
+
 class StatisticSerializer(serializers.Serializer):
       conferences = serializers.IntegerField()  
       registrations = serializers.IntegerField()    
       users = serializers.IntegerField()
 
-
-class TicketSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Ticket
-        fields = ['id', 'conference', 'qr_code_url', 'created_at']  
