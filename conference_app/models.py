@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models.signals import post_save
 from django.conf import settings
+import uuid
 
 class User(AbstractUser):
     username = models.CharField(max_length=100)
@@ -69,9 +70,11 @@ class Session(models.Model):
         return self.title
 
 class Registration(models.Model):
-    user = models.ForeignKey(User, related_name='registrations', on_delete=models.CASCADE)
-    session = models.ForeignKey(Session, related_name='registrations', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name='registrations')
     registered_at = models.DateTimeField(auto_now_add=True)
+    ticket_url = models.CharField(max_length=255)
+    unique_code = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
     def __str__(self):
         return f"{self.user.username} registered for {self.session.title}"

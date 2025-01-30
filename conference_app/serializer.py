@@ -3,6 +3,7 @@ from .models import Profile, User, Session, Registration, Conference
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.utils import timezone
+from django.conf import settings
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -178,4 +179,63 @@ class StatisticSerializer(serializers.Serializer):
       conferences = serializers.IntegerField()  
       registrations = serializers.IntegerField()    
       users = serializers.IntegerField()
+
+class MyTicketsSerializer(serializers.ModelSerializer):
+    conference_title = serializers.CharField(source='session.conference.title')
+    date = serializers.DateTimeField(source='session.start_time')
+    lieu = serializers.CharField(source='session.conference.lieu')
+    qrcode_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Registration
+        fields = ['id', 'conference_title', 'date', 'lieu', 'qrcode_url', 'registered_at']
+
+    def get_qrcode_url(self, obj):
+        request = self.context.get('request')
+        return request.build_absolute_uri(settings.MEDIA_URL + obj.ticket_url)
+
+class ConferenceDateRangeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Conference
+        fields = ['id', 'title', 'date', 'lieu', 'category']
+
+class AdminAddParticipantSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(write_only=True)
+    conference_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = Registration
+        fields = ['user_id', 'conference_id']
+        read_only_fields = ['registered_at']
+
+    def validate_user_id(self, value):
+        if not User.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Cet utilisateur n'existe pas.")
+        return value
+
+    def validate_conference_id(self, value):
+        try:
+            conference = Conference.objects.get(id=value)
+            if not conference.sessions.exists():
+                raise serializers.ValidationError("Cette conférence n'a pas de sessions disponibles.")
+        except Conference.DoesNotExist:
+            raise serializers.ValidationError("Cette conférence n'existe pas.")
+        return value
+
+    def create(self, validated_data):
+        user = User.objects.get(id=validated_data['user_id'])
+        conference = Conference.objects.get(id=validated_data['conference_id'])
+        
+        session = Session.objects.filter(
+            conference=conference,
+            start_time__gt=timezone.now()
+        ).first()
+
+        if not session:
+            raise serializers.ValidationError("Aucune session disponible pour cette conférence.")
+
+        if Registration.objects.filter(user=user, session=session).exists():
+            raise serializers.ValidationError("Cet utilisateur est déjà inscrit à cette session.")
+
+        return Registration.objects.create(user=user, session=session)
 

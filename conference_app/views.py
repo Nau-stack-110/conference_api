@@ -6,7 +6,7 @@ from rest_framework import viewsets, permissions
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializer import MytokenObtainPairSerializer, RegisterSerializer, SessionSerializerList, StatisticSerializer, UserSerializerProfile, ProfileSerializer, ConferenceSerializer, RegistrationSerializer, ConferenceCreateSerializer, RegistrationCreateSerializer, SessionSerializer
+from .serializer import MytokenObtainPairSerializer, RegisterSerializer, SessionSerializerList, StatisticSerializer, UserSerializerProfile, ProfileSerializer, ConferenceSerializer, RegistrationSerializer, ConferenceCreateSerializer, RegistrationCreateSerializer, SessionSerializer, MyTicketsSerializer, ConferenceDateRangeSerializer, AdminAddParticipantSerializer
 from .models import Profile, Session, User, Conference, Registration
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.decorators import api_view, permission_classes, action
@@ -14,6 +14,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from django.utils import timezone
 from rest_framework import serializers
 from django.conf import settings
+from django.utils.dateparse import parse_date
+from rest_framework.exceptions import ValidationError
 
 class ProfileView(viewsets.ModelViewSet):
     queryset = Profile.objects.all()
@@ -107,6 +109,9 @@ class RegistrationCreateView(generics.CreateAPIView):
             from .ticket_generator import TicketGenerator
             ticket_generator = TicketGenerator(registration)
             ticket_path = ticket_generator.generate_ticket()
+            
+            registration.ticket_url = ticket_path
+            registration.save()
             
             return Response({
                 'message': 'Inscription réussie',
@@ -209,4 +214,44 @@ class VerifyRegistrationView(generics.GenericAPIView):
 class SessionViewList(viewsets.ModelViewSet):
     queryset = Session.objects.all()
     serializer_class = SessionSerializerList
+
+class MyTicketsView(generics.ListAPIView):
+    serializer_class = MyTicketsSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Registration.objects.filter(
+            user=self.request.user
+        ).select_related('session__conference').order_by('-registered_at')
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+class ConferenceDateRangeView(generics.ListAPIView):
+    serializer_class = ConferenceDateRangeSerializer
+    
+    def get_queryset(self):
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        
+        if not start_date or not end_date:
+            raise ValidationError("Les paramètres start_date et end_date sont obligatoires")
+            
+        try:
+            start_date = parse_date(start_date)
+            end_date = parse_date(end_date)
+        except (ValueError, TypeError):
+            raise ValidationError("Format de date invalide. Utilisez le format AAAA-MM-JJ")
+            
+        if start_date > end_date:
+            raise ValidationError("La date de début doit être antérieure à la date de fin")
+            
+        return Conference.objects.filter(date__gte=start_date, date__lte=end_date)
+
+class AdminAddParticipantView(generics.CreateAPIView):
+    serializer_class = AdminAddParticipantSerializer
+    permission_classes = [IsAdminUser]
+    queryset = Registration.objects.all()
   

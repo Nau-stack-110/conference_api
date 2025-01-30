@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ConferenceCreateView2, RegisterView2, RegistrationListView, ProfileView, SessionCreateView2, SessionViewList, StatisticView, UserProfileView, MyTokenObtainPairView, RegisterView, ConferenceListView, ConferenceDetailView, ConferenceCreateView, RegistrationCreateView, SessionCreateView, ConferenceUpdateDeleteView, SessionUpdateDeleteView, VerifyRegistrationView
+from .views import ConferenceCreateView2, RegisterView2, RegistrationListView, ProfileView, SessionCreateView2, SessionViewList, StatisticView, UserProfileView, MyTokenObtainPairView, RegisterView, ConferenceListView, ConferenceDetailView, ConferenceCreateView, RegistrationCreateView, SessionCreateView, ConferenceUpdateDeleteView, SessionUpdateDeleteView, VerifyRegistrationView, MyTicketsView, ConferenceDateRangeView, AdminAddParticipantView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 router = DefaultRouter()
@@ -26,6 +26,9 @@ urlpatterns = [
     path('conferences/<int:pk>/update/', ConferenceUpdateDeleteView.as_view(), name='conference-update-delete'),
     path('sessions/<int:pk>/update/', SessionUpdateDeleteView.as_view(), name='session-update-delete'),
     path('verify/<str:unique_code>/', VerifyRegistrationView.as_view(), name='verify_registration'),
+    path('my-tickets/', MyTicketsView.as_view(), name='my-tickets'),
+    path('conferences/date-range/', ConferenceDateRangeView.as_view(), name='conference-date-range'),
+    path('admin/add-participant/', AdminAddParticipantView.as_view(), name='admin-add-participant'),
 ]
 
 urlpatterns += router.urls

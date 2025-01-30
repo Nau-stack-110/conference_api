@@ -27,8 +27,8 @@ class TicketGenerator:
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
+            box_size=20,
+            border=6,
         )
         qr.add_data(qr_data)
         qr.make(fit=True)
@@ -81,19 +81,20 @@ class TicketGenerator:
         # Ajouter le QR code
         qr_buffer = self.generate_qr_code()
         qr_image = Image.open(qr_buffer)
-        qr_image = qr_image.resize((100, 100))  # Redimensionner le QR code
+        qr_image = qr_image.resize((200, 200))  # Augmenté de 100x100 à 200x200
         ticket_image.paste(qr_image, (20, y_position))  # Ajouter le QR code à l'image
         
-        # Générer un nom de fichier unique
-        filename = f"ticket_{uuid.uuid4().hex[:8]}.png"
+        # Générer un nom de fichier unique avec extension .png
+        filename = f"ticket_{uuid.uuid4().hex[:8]}.png"  # Ajout de l'extension .png
         
-        # Créer le dossier tickets s'il n'existe pas
+        # Chemin complet de sauvegarde
         tickets_dir = os.path.join(settings.MEDIA_ROOT, 'tickets')
         if not os.path.exists(tickets_dir):
             os.makedirs(tickets_dir)
         
-        # Sauvegarder le ticket
+        # Sauvegarder le ticket en format PNG
         file_path = os.path.join(tickets_dir, filename)
-        ticket_image.save(file_path)
+        ticket_image.save(file_path, format='PNG')  # Spécification explicite du format
         
+        # Retourner le chemin relatif avec le dossier tickets
         return f'tickets/{filename}' 
